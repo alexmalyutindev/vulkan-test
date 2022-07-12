@@ -1,0 +1,1 @@
+Simple project to learn Vulkan using Silk.NET.

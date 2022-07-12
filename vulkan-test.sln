@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "silknet-test", "silknet-test\silknet-test.csproj", "{BA424D76-7DB0-42E7-80F6-5C9929A4B1AA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BA424D76-7DB0-42E7-80F6-5C9929A4B1AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA424D76-7DB0-42E7-80F6-5C9929A4B1AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA424D76-7DB0-42E7-80F6-5C9929A4B1AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA424D76-7DB0-42E7-80F6-5C9929A4B1AA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

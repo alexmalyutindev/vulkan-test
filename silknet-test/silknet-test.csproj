@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>silknet_test</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Silk.NET.GLFW" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.Input" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.Maths" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.SDL" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.Vulkan" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.Vulkan.Loader.Native" Version="2022.3.25" />
+      <PackageReference Include="Silk.NET.Windowing" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.Windowing.Glfw" Version="2.15.0" />
+      <PackageReference Include="Silk.NET.Windowing.Sdl" Version="2.15.0" />
+    </ItemGroup>
+
+</Project>
