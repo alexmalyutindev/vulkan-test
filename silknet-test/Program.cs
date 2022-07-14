@@ -1,6 +1,10 @@
-﻿using Silk.NET.Windowing;
-using Silk.NET.Windowing.Sdl;
+﻿using Render;
 
-SdlWindowing.RegisterPlatform();
-var window = Window.Create(WindowOptions.DefaultVulkan);
-window.Run();
+public class Program
+{
+    public static void Main()
+    {
+        var renderer = new Renderer();
+        renderer.Init();
+    }
+}
