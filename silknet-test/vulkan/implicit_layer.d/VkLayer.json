@@ -22,7 +22,7 @@
         "spec_version": "1"
       },
       {
-        "name": "VK_LAYER_LUNARG_standard_validation",
+        "name": "VK_LAYER_KHRONOS_validation",
         "spec_version": "1"
       }
     ],

@@ -27,25 +27,15 @@ namespace Render
             "VK_LAYER_KHRONOS_validation"
         };
 
-        public void Init()
+        public void Init(IWindow? window)
         {
-            CreateWindow();
+            _window = window;
             InitVulkan();
-        }
-
-        private static void CreateWindow()
-        {
-            var options = WindowOptions.DefaultVulkan with
-            {
-                Title = "Vulkan Test"
-            };
-            _window = Window.Create(options);
-            _window.Initialize();
         }
 
         private void InitVulkan()
         {
-            Console.WriteLine("Initialising Vulkan...");
+            Debug.Log("Initialising Vulkan...");
             CreateInstance();
             CreateSurface();
             PickPhysicalDevice();
@@ -58,7 +48,7 @@ namespace Render
 
             if (!CheckValidationLayerSupport())
             {
-                Console.WriteLine("Validation not supported!");
+                Debug.Log("Validation not supported!");
             }
 
             var appInfo = new ApplicationInfo()
@@ -78,10 +68,14 @@ namespace Render
                 PApplicationInfo = &appInfo,
                 EnabledExtensionCount = (uint) extensions.Length,
                 PpEnabledExtensionNames = (byte**) SilkMarshal.StringArrayToPtr(extensions),
+                EnabledLayerCount = 1,
+                PpEnabledLayerNames = (byte**) SilkMarshal.StringArrayToPtr(new[] { "VK_LAYER_KHRONOS_validation" }),
             };
 
             var result = _vk.CreateInstance(createInfo, null, out _instance);
-            Console.WriteLine($"Create Instance: {result}\nWith ext:\n - {String.Join("\n - ", extensions)}");
+            Debug.Log($"Create Instance: {result}\n" +
+                      $" With ext:\n" +
+                      $"  - {String.Join("\n  - ", extensions)}");
         }
 
         private bool CheckValidationLayerSupport()
@@ -107,8 +101,7 @@ namespace Render
                 throw new NotSupportedException("KHR_surface extension not found.");
             }
 
-            var callback = new AllocationCallbacks();
-            _surface = _window!.VkSurface!.Create<AllocationCallbacks>(_instance.ToHandle(), &callback).ToSurface();
+            _surface = _window!.VkSurface!.Create<AllocationCallbacks>(_instance.ToHandle(), null).ToSurface();
         }
 
         private void PickPhysicalDevice()
@@ -224,7 +217,7 @@ namespace Render
 
             return indices;
         }
-        
+
         private static string[] EnumerateInstanceLayers()
         {
             uint count = 0;
