@@ -15,4 +15,22 @@
         <PackageReference Include="Silk.NET.Core" Version="2.16.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="vulkan\icd.d\MoltenVK_icd.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="vulkan\implicit_layer.d\VkLayer.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="vulkan\implicit_layer.d\VkLayer_khronos_validation.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="vulkan\libMoltenVK.dylib">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

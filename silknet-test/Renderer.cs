@@ -1,7 +1,4 @@
-using System;
-using System.Linq;
 using System.Runtime.InteropServices;
-using Silk.NET.Core;
 using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
@@ -65,6 +62,7 @@ namespace Render
             var createInfo = new InstanceCreateInfo()
             {
                 SType = StructureType.InstanceCreateInfo,
+                Flags = InstanceCreateFlags.EnumeratePortabilityBitKhr,
                 PApplicationInfo = &appInfo,
                 EnabledExtensionCount = (uint) extensions.Length,
                 PpEnabledExtensionNames = (byte**) SilkMarshal.StringArrayToPtr(extensions),
@@ -175,6 +173,8 @@ namespace Render
         {
             var glfwExtensions = _window!.VkSurface!.GetRequiredExtensions(out var glfwExtensionCount);
             var extensions = SilkMarshal.PtrToStringArray((nint) glfwExtensions, (int) glfwExtensionCount);
+            Array.Resize(ref extensions, extensions.Length + 1);
+            extensions[^1] = "VK_KHR_portability_enumeration";
 
             return extensions;
         }

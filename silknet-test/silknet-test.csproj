@@ -46,9 +46,15 @@
       <EmbeddedResource Include="vulkan\icd.d\MoltenVK_icd.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
+      <EmbeddedResource Remove="bin\**" />
+      <None Remove="bin\**" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="bin\Debug\net6.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="bin\**" />
     </ItemGroup>
 </Project>
