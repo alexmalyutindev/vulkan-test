@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Configurations>Debug;Release;DebugPortability</Configurations>
+        <Platforms>AnyCPU</Platforms>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DefineConstants>TRACE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <DefineConstants>TRACE</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'DebugPortability' ">
+      <DefineConstants>TRACE;VK_PORTABILITY;DEBUG</DefineConstants>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug | MacOS Arm64' ">
+      <PlatformTarget>ARM64</PlatformTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug | MacOS Arm64' ">
+      <OutputPath>bin\DebugMacOS_arm64/net7.0/</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug | MacOS Arm64' ">
+      <DefineConstants>TRACE
+MACOS_ARM64</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Exomia.Vulkan.Api.Core" Version="1.3.241" />
+        <PackageReference Include="Exomia.Vulkan.Api.Macos" Version="1.3.241" />
+        <PackageReference Include="Exomia.Vulkan.Api.Screen" Version="1.3.241" />
+        <PackageReference Include="Silk.NET.Core" Version="2.16.0" />
+        <PackageReference Include="Silk.NET.GLFW" Version="2.16.0" />
+        <PackageReference Include="Silk.NET.Windowing" Version="2.16.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="vulkan\icd.d\MoltenVK_icd.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="vulkan\implicit_layer.d\VkLayer.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <EmbeddedResource Include="vulkan\implicit_layer.d\VkLayer_khronos_validation.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="vulkan\libMoltenVK.dylib">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
