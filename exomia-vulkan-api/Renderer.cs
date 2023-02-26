@@ -2,7 +2,7 @@ using Exomia.Vulkan.Api.Core;
 using Silk.NET.Core.Native;
 using static Exomia.Vulkan.Api.Core.Vk;
 
-namespace Render
+namespace Engine.Rendering
 {
     public unsafe class Renderer
     {
