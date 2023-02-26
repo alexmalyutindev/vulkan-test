@@ -22,8 +22,14 @@ public unsafe class VulkanContext
         CreateSurface();
         PickPhysicalDevice();
         CreateLogicalDevice();
+        
+        // TODO: createSwapChain
+        // TODO: createImageViews
+        // TODO: createRenderPass
+        // TODO: createGraphicsPipeline
+        // TODO: createFramebuffers
 
-        // TODO
+        // TODO: Refactoring
         {
             var graphicsQueue = new VkQueue();
             vkGetDeviceQueue(_device, _vkQueueGraphicsBit, 0, &graphicsQueue);
