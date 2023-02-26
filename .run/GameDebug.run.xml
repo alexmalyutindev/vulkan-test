@@ -1,18 +1,16 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="exomia-vulkan-api" type="DotNetProject" factoryName=".NET Project">
-    <option name="EXE_PATH" value="$PROJECT_DIR$/exomia-vulkan-api/bin/DebugPortability/net7.0/exomia-vulkan-api" />
+  <configuration default="false" name="GameDebug" type="DotNetProject" factoryName=".NET Project">
+    <option name="EXE_PATH" value="$PROJECT_DIR$/Game/bin/Debug/net7.0/Game" />
     <option name="PROGRAM_PARAMETERS" value="" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/exomia-vulkan-api/bin/DebugPortability/net7.0" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Game/bin/Debug/net7.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <envs>
       <env name="VK_LOADER_LAYERS_ENABLE" value="*api_dump,*validation" />
-      <env name="VK_INSTANCE_LAYERS" value="VK_LAYER_KHRONOS_validation" />
     </envs>
     <option name="USE_EXTERNAL_CONSOLE" value="0" />
     <option name="USE_MONO" value="0" />
     <option name="RUNTIME_ARGUMENTS" value="" />
-    <option name="RUNTIME_TYPE" value="coreclr" />
-    <option name="PROJECT_PATH" value="$PROJECT_DIR$/exomia-vulkan-api/exomia-vulkan-api.csproj" />
+    <option name="PROJECT_PATH" value="$PROJECT_DIR$/Game/Game.csproj" />
     <option name="PROJECT_EXE_PATH_TRACKING" value="1" />
     <option name="PROJECT_ARGUMENTS_TRACKING" value="1" />
     <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="1" />
