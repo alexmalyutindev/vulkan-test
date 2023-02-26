@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Exomia.Vulkan.Api.Core;
 
+namespace Engine;
+
 public static unsafe class Helpers
 {
     public static byte* ToPointer(this string text)
