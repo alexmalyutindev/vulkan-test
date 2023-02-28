@@ -1,4 +1,5 @@
 using Exomia.Vulkan.Api.Core;
+using Exomia.Vulkan.Api.Metal;
 using Silk.NET.Core.Native;
 using Silk.NET.Windowing;
 using static Exomia.Vulkan.Api.Core.Vk;
@@ -14,6 +15,7 @@ public unsafe class VulkanContext
     private VkPhysicalDevice _physicalDevice;
     private VkDevice _device;
     private uint _vkQueueGraphicsBit;
+    private VkSurfaceKHR _vkSurfaceKhr;
 
     public void Initialise(IWindow window)
     {
@@ -22,8 +24,9 @@ public unsafe class VulkanContext
         CreateSurface();
         PickPhysicalDevice();
         CreateLogicalDevice();
-        
         // TODO: createSwapChain
+        CreateSwapChain();
+
         // TODO: createImageViews
         // TODO: createRenderPass
         // TODO: createGraphicsPipeline
@@ -117,14 +120,26 @@ public unsafe class VulkanContext
 
     private void CreateSurface()
     {
-        _surface = _window
-            .VkSurface!
-            .Create<VkAllocationCallbacks>(new VkHandle((nint) (void*) Instance), null);
-
-        if (_surface.Handle == 0)
+        var vkSurfaceKhr = new VkSurfaceKHR();
+#if METAL
+        VkExtMetalSurface.Load(Instance);
+        var vkMetalSurfaceCreateInfoExt = new VkMetalSurfaceCreateInfoEXT()
+        {
+            sType = VkMetalSurfaceCreateInfoEXT.STYPE,
+            pNext = null,
+            flags = 0
+        };
+        if (VkExtMetalSurface.vkCreateMetalSurfaceEXT(
+                Instance,
+                &vkMetalSurfaceCreateInfoExt,
+                null,
+                &vkSurfaceKhr
+            ) != VkResult.VK_SUCCESS)
         {
             throw new Exception($"Failed to create VkSuraface!");
         }
+#endif
+        _vkSurfaceKhr = vkSurfaceKhr;
     }
 
     private void PickPhysicalDevice()
@@ -185,6 +200,42 @@ public unsafe class VulkanContext
         }
 
         _device = device;
+    }
+
+    struct SwapChainBuffer {
+        VkImage image;
+        VkImageView view;
+    };
+
+    private void CreateSwapChain()
+    {
+        VkKhrSwapchain.Load(Instance);
+        VkKhrSwapchain.Load(_device);
+        var vkSwapchainKhr = new VkSwapchainKHR();
+
+        var vkSwapchainCreateInfoKhr = new VkSwapchainCreateInfoKHR()
+        {
+            sType = VkSwapchainCreateInfoKHR.STYPE,
+            surface = _vkSurfaceKhr,
+            minImageCount = 2,
+            imageFormat = VkFormat.VK_FORMAT_R16G16B16A16_UINT,
+            imageColorSpace = VkColorSpaceKHR.VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+            imageExtent = new VkExtent2D(){ width = (uint) _window.Size[0], height = (uint) _window.Size[1]},
+            imageUsage = VkImageUsageFlagBits.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            preTransform = VkSurfaceTransformFlagBitsKHR.VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+            imageArrayLayers = 1,
+            imageSharingMode = VkSharingMode.VK_SHARING_MODE_EXCLUSIVE,
+            queueFamilyIndexCount = 0,
+            pQueueFamilyIndices = null,
+            presentMode = VkPresentModeKHR.VK_PRESENT_MODE_FIFO_KHR,
+            clipped = true,
+            compositeAlpha = VkCompositeAlphaFlagBitsKHR.VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        };
+        if (VkKhrSwapchain.vkCreateSwapchainKHR(_device, &vkSwapchainCreateInfoKhr, null, &vkSwapchainKhr) !=
+            VkResult.VK_SUCCESS)
+        {
+            throw new Exception("Failed to create swapchain!");
+        }
     }
 
     private VkPhysicalDevice FindSuitableDevice(VkPhysicalDevice[] vkPhysicalDevices)
