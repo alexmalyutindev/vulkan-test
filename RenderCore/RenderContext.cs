@@ -2,7 +2,6 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Assimp;
 using Silk.NET.Core;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
@@ -32,55 +31,6 @@ struct SwapChainSupportDetails
     public PresentModeKHR[] PresentModes;
 }
 
-struct Vertex
-{
-    public Vector3D<float> Pos;
-    public Vector3D<float> Color;
-    public Vector2D<float> TextCoord;
-
-    public static VertexInputBindingDescription GetBindingDescription()
-    {
-        VertexInputBindingDescription bindingDescription = new()
-        {
-            Binding = 0,
-            Stride = (uint) Unsafe.SizeOf<Vertex>(),
-            InputRate = VertexInputRate.Vertex,
-        };
-
-        return bindingDescription;
-    }
-
-    public static VertexInputAttributeDescription[] GetAttributeDescriptions()
-    {
-        var attributeDescriptions = new[]
-        {
-            new VertexInputAttributeDescription()
-            {
-                Binding = 0,
-                Location = 0,
-                Format = Format.R32G32B32Sfloat,
-                Offset = (uint) Marshal.OffsetOf<Vertex>(nameof(Pos)),
-            },
-            new VertexInputAttributeDescription()
-            {
-                Binding = 0,
-                Location = 1,
-                Format = Format.R32G32B32Sfloat,
-                Offset = (uint) Marshal.OffsetOf<Vertex>(nameof(Color)),
-            },
-            new VertexInputAttributeDescription()
-            {
-                Binding = 0,
-                Location = 2,
-                Format = Format.R32G32Sfloat,
-                Offset = (uint) Marshal.OffsetOf<Vertex>(nameof(TextCoord)),
-            }
-        };
-
-        return attributeDescriptions;
-    }
-}
-
 struct UniformBufferObject
 {
     public Matrix4X4<float> Model;
@@ -89,7 +39,7 @@ struct UniformBufferObject
 }
 
 // TODO: Convert to lib usage
-unsafe class HelloTriangleApplication
+public unsafe class VulkanContext
 {
     const int Width = 800;
     const int Height = 600;
@@ -112,7 +62,7 @@ unsafe class HelloTriangleApplication
     };
 
     private IWindow? _window;
-    private Vk? _vk;
+    private static Vk? _vk;
 
     private Instance _instance;
 
@@ -121,10 +71,10 @@ unsafe class HelloTriangleApplication
     private KhrSurface? _khrSurface;
     private SurfaceKHR _surface;
 
-    private PhysicalDevice _physicalDevice;
-    private Device _device;
+    private static PhysicalDevice _physicalDevice;
+    private static Device _device;
 
-    private Queue _graphicsQueue;
+    private static Queue _graphicsQueue;
     private Queue _presentQueue;
 
     private KhrSwapchain? _khrSwapChain;
@@ -140,7 +90,7 @@ unsafe class HelloTriangleApplication
     private PipelineLayout _pipelineLayout;
     private Pipeline _graphicsPipeline;
 
-    private CommandPool _commandPool;
+    private static CommandPool _commandPool;
 
     private Image _depthImage;
     private DeviceMemory _depthImageMemory;
@@ -150,12 +100,7 @@ unsafe class HelloTriangleApplication
     private DeviceMemory _textureImageMemory;
     private ImageView _textureImageView;
     private Sampler _textureSampler;
-
-    private Buffer _vertexBuffer;
-    private DeviceMemory _vertexBufferMemory;
-    private Buffer _indexBuffer;
-    private DeviceMemory _indexBufferMemory;
-
+    
     private Buffer[]? _uniformBuffers;
     private DeviceMemory[]? _uniformBuffersMemory;
 
@@ -172,9 +117,7 @@ unsafe class HelloTriangleApplication
 
     private bool _frameBufferResized;
 
-    private Vertex[]? _vertices;
-
-    private uint[]? _indices;
+    private Mesh _mesh;
 
     public void Run()
     {
@@ -227,10 +170,10 @@ unsafe class HelloTriangleApplication
         CreateTextureImage();
         CreateTextureImageView();
         CreateTextureSampler();
+
         LoadModel();
-        CreateVertexBuffer();
-        CreateIndexBuffer();
         CreateUniformBuffers();
+
         CreateDescriptorPool();
         CreateDescriptorSets();
         CreateCommandBuffers();
@@ -280,6 +223,16 @@ unsafe class HelloTriangleApplication
         _vk!.DestroyDescriptorPool(_device, _descriptorPool, null);
     }
 
+    internal static void DestroyBuffer(Buffer buffer)
+    {
+        _vk!.DestroyBuffer(_device, buffer, null);
+    }
+    
+    internal static void FreeMemory(DeviceMemory memory)
+    {
+        _vk!.FreeMemory(_device, memory, null);
+    }
+    
     private void CleanUp()
     {
         CleanUpSwapChain();
@@ -292,11 +245,7 @@ unsafe class HelloTriangleApplication
 
         _vk!.DestroyDescriptorSetLayout(_device, _descriptorSetLayout, null);
 
-        _vk!.DestroyBuffer(_device, _indexBuffer, null);
-        _vk!.FreeMemory(_device, _indexBufferMemory, null);
-
-        _vk!.DestroyBuffer(_device, _vertexBuffer, null);
-        _vk!.FreeMemory(_device, _vertexBufferMemory, null);
+        _mesh.Dispose();
 
         for (int i = 0; i < MaxFramesInFlight; i++)
         {
@@ -789,8 +738,8 @@ unsafe class HelloTriangleApplication
             fragShaderStageInfo
         };
 
-        var bindingDescription = Vertex.GetBindingDescription();
-        var attributeDescriptions = Vertex.GetAttributeDescriptions();
+        var bindingDescription = Attributes.GetBindingDescription();
+        var attributeDescriptions = Attributes.GetAttributeDescriptions();
 
         fixed (VertexInputAttributeDescription* attributeDescriptionsPtr = attributeDescriptions)
         fixed (DescriptorSetLayout* descriptorSetLayoutPtr = &_descriptorSetLayout)
@@ -1272,134 +1221,10 @@ unsafe class HelloTriangleApplication
 
     private void LoadModel()
     {
-        var context = new AssimpContext();
-        context.ImportFile(ModelPath);
-        var scene = context.ImportFile(ModelPath);
-
-        var vertexMap = new Dictionary<Vertex, uint>();
-        var vertices = new List<Vertex>();
-        var indices = new List<uint>();
-
-        VisitSceneNode(scene.RootNode);
-        
-        // TODO: ?
-        // assimp.ReleaseImport(scene);
-
-        _vertices = vertices.ToArray();
-        _indices = indices.ToArray();
-
-        void VisitSceneNode(Node node)
-        {
-            for (int m = 0; m < node.MeshCount; m++)
-            {
-                var mesh = scene.Meshes[node.MeshIndices[m]];
-
-                for (int f = 0; f < mesh.FaceCount; f++)
-                {
-                    var face = mesh.Faces[f];
-
-                    for (int i = 0; i < face.IndexCount; i++)
-                    {
-                        int index = face.Indices[i];
-
-                        var position = mesh.Vertices[index];
-                        var texture = mesh.TextureCoordinateChannels[0][index];
-
-                        Vertex vertex = new Vertex
-                        {
-                            Pos = new Vector3D<float>(position.X, position.Y, position.Z),
-                            Color = new Vector3D<float>(1, 1, 1),
-                            //Flip Y for OBJ in Vulkan
-                            TextCoord = new Vector2D<float>(texture.X, 1.0f - texture.Y)
-                        };
-
-                        if (vertexMap.TryGetValue(vertex, out var meshIndex))
-                        {
-                            indices.Add(meshIndex);
-                        }
-                        else
-                        {
-                            indices.Add((uint) vertices.Count);
-                            vertexMap[vertex] = (uint) vertices.Count;
-                            vertices.Add(vertex);
-                        }
-                    }
-                }
-            }
-
-            for (int c = 0; c < node.ChildCount; c++)
-            {
-                VisitSceneNode(node.Children[c]);
-            }
-        }
+        _mesh = Mesh.Load(ModelPath);
+        _mesh.LoadOnGPU();
     }
 
-
-    private void CreateVertexBuffer()
-    {
-        ulong bufferSize = (ulong) (Unsafe.SizeOf<Vertex>() * _vertices!.Length);
-
-        Buffer stagingBuffer = default;
-        DeviceMemory stagingBufferMemory = default;
-        CreateBuffer(
-            bufferSize,
-            BufferUsageFlags.TransferSrcBit,
-            MemoryPropertyFlags.HostVisibleBit | MemoryPropertyFlags.HostCoherentBit,
-            ref stagingBuffer,
-            ref stagingBufferMemory
-        );
-
-        void* data;
-        _vk!.MapMemory(_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        _vertices.AsSpan().CopyTo(new Span<Vertex>(data, _vertices.Length));
-        _vk!.UnmapMemory(_device, stagingBufferMemory);
-
-        CreateBuffer(
-            bufferSize,
-            BufferUsageFlags.TransferDstBit | BufferUsageFlags.VertexBufferBit,
-            MemoryPropertyFlags.DeviceLocalBit,
-            ref _vertexBuffer,
-            ref _vertexBufferMemory
-        );
-
-        CopyBuffer(stagingBuffer, _vertexBuffer, bufferSize);
-
-        _vk!.DestroyBuffer(_device, stagingBuffer, null);
-        _vk!.FreeMemory(_device, stagingBufferMemory, null);
-    }
-
-    private void CreateIndexBuffer()
-    {
-        ulong bufferSize = (ulong) (Unsafe.SizeOf<uint>() * _indices!.Length);
-
-        Buffer stagingBuffer = default;
-        DeviceMemory stagingBufferMemory = default;
-        CreateBuffer(
-            bufferSize,
-            BufferUsageFlags.TransferSrcBit,
-            MemoryPropertyFlags.HostVisibleBit | MemoryPropertyFlags.HostCoherentBit,
-            ref stagingBuffer,
-            ref stagingBufferMemory
-        );
-
-        void* data;
-        _vk!.MapMemory(_device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        _indices.AsSpan().CopyTo(new Span<uint>(data, _indices.Length));
-        _vk!.UnmapMemory(_device, stagingBufferMemory);
-
-        CreateBuffer(
-            bufferSize,
-            BufferUsageFlags.TransferDstBit | BufferUsageFlags.IndexBufferBit,
-            MemoryPropertyFlags.DeviceLocalBit,
-            ref _indexBuffer,
-            ref _indexBufferMemory
-        );
-
-        CopyBuffer(stagingBuffer, _indexBuffer, bufferSize);
-
-        _vk!.DestroyBuffer(_device, stagingBuffer, null);
-        _vk!.FreeMemory(_device, stagingBufferMemory, null);
-    }
 
     private void CreateUniformBuffers()
     {
@@ -1527,7 +1352,7 @@ unsafe class HelloTriangleApplication
         }
     }
 
-    private void CreateBuffer(
+    private static void CreateBuffer(
         ulong size,
         BufferUsageFlags usage,
         MemoryPropertyFlags properties,
@@ -1571,7 +1396,7 @@ unsafe class HelloTriangleApplication
         _vk!.BindBufferMemory(_device, buffer, bufferMemory, 0);
     }
 
-    private CommandBuffer BeginSingleTimeCommands()
+    private static CommandBuffer BeginSingleTimeCommands()
     {
         CommandBufferAllocateInfo allocateInfo = new()
         {
@@ -1594,7 +1419,7 @@ unsafe class HelloTriangleApplication
         return commandBuffer;
     }
 
-    private void EndSingleTimeCommands(CommandBuffer commandBuffer)
+    private static void EndSingleTimeCommands(CommandBuffer commandBuffer)
     {
         _vk!.EndCommandBuffer(commandBuffer);
 
@@ -1611,7 +1436,7 @@ unsafe class HelloTriangleApplication
         _vk!.FreeCommandBuffers(_device, _commandPool, 1, commandBuffer);
     }
 
-    private void CopyBuffer(Buffer srcBuffer, Buffer dstBuffer, ulong size)
+    private static void CopyBuffer(Buffer srcBuffer, Buffer dstBuffer, ulong size)
     {
         CommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -1625,7 +1450,7 @@ unsafe class HelloTriangleApplication
         EndSingleTimeCommands(commandBuffer);
     }
 
-    private uint FindMemoryType(uint typeFilter, MemoryPropertyFlags properties)
+    private static uint FindMemoryType(uint typeFilter, MemoryPropertyFlags properties)
     {
         _vk!.GetPhysicalDeviceMemoryProperties(_physicalDevice, out var memProperties);
 
@@ -1708,7 +1533,8 @@ unsafe class HelloTriangleApplication
 
             _vk!.CmdBindPipeline(_commandBuffers[i], PipelineBindPoint.Graphics, _graphicsPipeline);
 
-            var vertexBuffers = new Buffer[] { _vertexBuffer };
+            // TODO:
+            var vertexBuffers = new Buffer[] { _mesh.VertexBuffer };
             var offsets = new ulong[] { 0 };
 
             fixed (ulong* offsetsPtr = offsets)
@@ -1717,7 +1543,7 @@ unsafe class HelloTriangleApplication
                 _vk!.CmdBindVertexBuffers(_commandBuffers[i], 0, 1, vertexBuffersPtr, offsetsPtr);
             }
 
-            _vk!.CmdBindIndexBuffer(_commandBuffers[i], _indexBuffer, 0, IndexType.Uint32);
+            _vk!.CmdBindIndexBuffer(_commandBuffers[i], _mesh.IndexBuffer, 0, IndexType.Uint32);
 
             _vk!.CmdBindDescriptorSets(
                 _commandBuffers[i],
@@ -1730,7 +1556,7 @@ unsafe class HelloTriangleApplication
                 null
             );
 
-            _vk!.CmdDrawIndexed(_commandBuffers[i], (uint) _indices!.Length, 1, 0, 0, 0);
+            _vk!.CmdDrawIndexed(_commandBuffers[i], _mesh!.IndicesCount, 1, 0, 0, 0);
 
             _vk!.CmdEndRenderPass(_commandBuffers[i]);
 
@@ -2154,5 +1980,38 @@ unsafe class HelloTriangleApplication
         );
 
         return Vk.False;
+    }
+
+    internal static void LoadBuffer<T>(T[] bufferData, ref Buffer buffer, ref DeviceMemory bufferMemory)
+    {
+        ulong bufferSize = (ulong) (Unsafe.SizeOf<T>() * bufferData!.Length);
+
+        Buffer stagingBuffer = default;
+        DeviceMemory stagingBufferMemory = default;
+        CreateBuffer(
+            bufferSize,
+            BufferUsageFlags.TransferSrcBit,
+            MemoryPropertyFlags.HostVisibleBit | MemoryPropertyFlags.HostCoherentBit,
+            ref stagingBuffer,
+            ref stagingBufferMemory
+        );
+
+        void* data;
+        _vk!.MapMemory(_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        bufferData.AsSpan().CopyTo(new Span<T>(data, bufferData.Length));
+        _vk!.UnmapMemory(_device, stagingBufferMemory);
+
+        CreateBuffer(
+            bufferSize,
+            BufferUsageFlags.TransferDstBit | BufferUsageFlags.IndexBufferBit,
+            MemoryPropertyFlags.DeviceLocalBit,
+            ref buffer,
+            ref bufferMemory
+        );
+
+        CopyBuffer(stagingBuffer, buffer, bufferSize);
+
+        _vk!.DestroyBuffer(_device, stagingBuffer, null);
+        _vk!.FreeMemory(_device, stagingBufferMemory, null);
     }
 }

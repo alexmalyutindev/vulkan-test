@@ -1,0 +1,6 @@
+<Project>
+ <PropertyGroup>
+	 <VulkanBinPath>/Users/alex/VulkanSDK/1.3.243.0/macOS/Bin</VulkanBinPath>
+	 <ShaderOutputPath>Shaders</ShaderOutputPath>
+ </PropertyGroup>
+</Project>

@@ -9,6 +9,24 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Engine\Engine.csproj" />
+      <ProjectReference Include="..\RenderCore\RenderCore.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="obj\Directory.Build.props" />
+      <None Include="obj\Directory.Build.targets" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <VertexShader Include="..\Shaders\26_shader_depth.vert">
+        <Link>Shaders\26_shader_depth.vert</Link>
+      </VertexShader>
+    </ItemGroup>
+
+    <ItemGroup>
+      <FragmentShader Include="..\Shaders\26_shader_depth.frag">
+        <Link>Shaders\26_shader_depth.frag</Link>
+      </FragmentShader>
     </ItemGroup>
 
 </Project>

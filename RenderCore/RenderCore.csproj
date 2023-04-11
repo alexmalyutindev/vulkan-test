@@ -18,4 +18,18 @@
       <PackageReference Include="StirlingLabs.Assimp.Net" Version="23.4.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="..\Assets\viking_room.png" Link="Assets\viking_room.png">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="..\Assets\viking_room.obj" Link="Assets\viking_room.obj">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+        <VertexShader Include="../**/*.vert" />
+        <FragmentShader Include="../**/*.frag" />
+    </ItemGroup>
+
 </Project>
