@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Assimp;
 using Silk.NET.Maths;
 using Silk.NET.Vulkan;
@@ -8,6 +7,8 @@ namespace RenderCore;
 
 public class Mesh : IDisposable
 {
+    public uint IndicesCount => (uint) _indices.Length;
+
     // CPU
     private Attributes[] _vertices;
     private uint[] _indices;
@@ -18,7 +19,6 @@ public class Mesh : IDisposable
 
     private DeviceMemory _vertexBufferMemory;
     private DeviceMemory _indexBufferMemory;
-    public uint IndicesCount => (uint) _indices.Length;
 
     public static Mesh Load(string path)
     {
@@ -29,9 +29,9 @@ public class Mesh : IDisposable
         var vertexMap = new Dictionary<Attributes, uint>();
         var vertices = new List<Attributes>();
         var indices = new List<uint>();
-        
+
         VisitSceneNode(scene.RootNode);
-        
+
         mesh._vertices = vertices.ToArray();
         mesh._indices = indices.ToArray();
 
@@ -93,7 +93,7 @@ public class Mesh : IDisposable
     {
         VulkanContext.DestroyBuffer(VertexBuffer);
         VulkanContext.FreeMemory(_vertexBufferMemory);
-        
+
         VulkanContext.DestroyBuffer(IndexBuffer);
         VulkanContext.FreeMemory(_indexBufferMemory);
     }

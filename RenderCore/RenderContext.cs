@@ -41,9 +41,6 @@ struct UniformBufferObject
 // TODO: Convert to lib usage
 public unsafe class VulkanContext
 {
-    const int Width = 800;
-    const int Height = 600;
-
     const string ModelPath = @"Assets/viking_room.obj";
     const string TexturePath = @"Assets/viking_room.png";
 
@@ -61,7 +58,7 @@ public unsafe class VulkanContext
         KhrSwapchain.ExtensionName
     };
 
-    private IWindow? _window;
+    private readonly IWindow? _window;
     private static Vk? _vk;
 
     private Instance _instance;
@@ -119,31 +116,9 @@ public unsafe class VulkanContext
 
     private Mesh _mesh;
 
-    public void Run()
+    public VulkanContext(IWindow window)
     {
-        InitWindow();
-        InitVulkan();
-        MainLoop();
-        CleanUp();
-    }
-
-    private void InitWindow()
-    {
-        //Create a window.
-        var options = WindowOptions.DefaultVulkan with
-        {
-            Size = new Vector2D<int>(Width, Height),
-            Title = "Vulkan",
-        };
-
-        _window = Window.Create(options);
-        _window.Initialize();
-
-        if (_window.VkSurface is null)
-        {
-            throw new Exception("Windowing platform doesn't support Vulkan.");
-        }
-
+        _window = window;
         _window.Resize += FramebufferResizeCallback;
     }
 
@@ -152,7 +127,7 @@ public unsafe class VulkanContext
         _frameBufferResized = true;
     }
 
-    private void InitVulkan()
+    public void InitVulkan()
     {
         CreateInstance();
         SetupDebugMessenger();
@@ -180,10 +155,8 @@ public unsafe class VulkanContext
         CreateSyncObjects();
     }
 
-    private void MainLoop()
+    public void DeviceWaitIdle()
     {
-        _window!.Render += DrawFrame;
-        _window!.Run();
         _vk!.DeviceWaitIdle(_device);
     }
 
@@ -232,8 +205,8 @@ public unsafe class VulkanContext
     {
         _vk!.FreeMemory(_device, memory, null);
     }
-    
-    private void CleanUp()
+
+    public void CleanUp()
     {
         CleanUpSwapChain();
 
@@ -1635,7 +1608,7 @@ public unsafe class VulkanContext
         _vk!.UnmapMemory(_device, _uniformBuffersMemory![currentImage]);
     }
 
-    private void DrawFrame(double delta)
+    public void DrawFrame(double delta)
     {
         _vk!.WaitForFences(_device, 1, _inFlightFences![_currentFrame], true, ulong.MaxValue);
 
