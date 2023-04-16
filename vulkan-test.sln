@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Engine", "Engine\Engine.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Game", "Game\Game.csproj", "{6A12DB56-5CB2-4721-92F8-677E3E85B140}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenderCore", "RenderCore\RenderCore.csproj", "{E6C25493-AE79-40AE-874B-6ABC94F11A2F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EngineCore", "EngineCore\EngineCore.csproj", "{E6C25493-AE79-40AE-874B-6ABC94F11A2F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

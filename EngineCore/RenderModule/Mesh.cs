@@ -3,7 +3,7 @@ using Silk.NET.Maths;
 using Silk.NET.Vulkan;
 using Buffer = Silk.NET.Vulkan.Buffer;
 
-namespace RenderCore;
+namespace EngineCore;
 
 public class Mesh : IDisposable
 {
@@ -85,16 +85,16 @@ public class Mesh : IDisposable
 
     public void LoadOnGPU()
     {
-        VulkanContext.LoadBuffer(_vertices, ref VertexBuffer, ref _vertexBufferMemory);
-        VulkanContext.LoadBuffer(_indices, ref IndexBuffer, ref _indexBufferMemory);
+        RenderModule.LoadBuffer(_vertices, ref VertexBuffer, ref _vertexBufferMemory);
+        RenderModule.LoadBuffer(_indices, ref IndexBuffer, ref _indexBufferMemory);
     }
 
     public void Dispose()
     {
-        VulkanContext.DestroyBuffer(VertexBuffer);
-        VulkanContext.FreeMemory(_vertexBufferMemory);
+        RenderModule.DestroyBuffer(VertexBuffer);
+        RenderModule.FreeMemory(_vertexBufferMemory);
 
-        VulkanContext.DestroyBuffer(IndexBuffer);
-        VulkanContext.FreeMemory(_indexBufferMemory);
+        RenderModule.DestroyBuffer(IndexBuffer);
+        RenderModule.FreeMemory(_indexBufferMemory);
     }
 }

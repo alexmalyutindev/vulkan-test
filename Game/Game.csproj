@@ -9,7 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Engine\Engine.csproj" />
-      <ProjectReference Include="..\RenderCore\RenderCore.csproj" />
+      <ProjectReference Include="..\EngineCore\EngineCore.csproj" />
     </ItemGroup>
 
     <ItemGroup>

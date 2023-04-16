@@ -1,4 +1,7 @@
-﻿namespace RenderCore;
+﻿using MtgWeb.Core;
+using Math = System.Math;
+
+namespace EngineCore;
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -39,7 +42,7 @@ struct UniformBufferObject
 }
 
 // TODO: Convert to lib usage
-public unsafe class VulkanContext
+public unsafe class RenderModule : IDisposable
 {
     const string ModelPath = @"Assets/viking_room.obj";
     const string TexturePath = @"Assets/viking_room.png";
@@ -97,7 +100,7 @@ public unsafe class VulkanContext
     private DeviceMemory _textureImageMemory;
     private ImageView _textureImageView;
     private Sampler _textureSampler;
-    
+
     private Buffer[]? _uniformBuffers;
     private DeviceMemory[]? _uniformBuffersMemory;
 
@@ -116,7 +119,7 @@ public unsafe class VulkanContext
 
     private Mesh _mesh;
 
-    public VulkanContext(IWindow window)
+    public RenderModule(IWindow window)
     {
         _window = window;
         _window.Resize += FramebufferResizeCallback;
@@ -200,13 +203,13 @@ public unsafe class VulkanContext
     {
         _vk!.DestroyBuffer(_device, buffer, null);
     }
-    
+
     internal static void FreeMemory(DeviceMemory memory)
     {
         _vk!.FreeMemory(_device, memory, null);
     }
 
-    public void CleanUp()
+    private void CleanUp()
     {
         CleanUpSwapChain();
 
@@ -358,7 +361,8 @@ public unsafe class VulkanContext
         DebugUtilsMessengerCreateInfoEXT createInfo = new();
         PopulateDebugMessengerCreateInfo(ref createInfo);
 
-        if (_debugUtils!.CreateDebugUtilsMessenger(_instance, in createInfo, null, out _debugMessenger) != Result.Success)
+        if (_debugUtils!.CreateDebugUtilsMessenger(_instance, in createInfo, null, out _debugMessenger) !=
+            Result.Success)
         {
             throw new Exception("failed to set up debug messenger!");
         }
@@ -976,7 +980,12 @@ public unsafe class VulkanContext
             ref _textureImageMemory
         );
 
-        TransitionImageLayout(_textureImage, Format.R8G8B8A8Srgb, ImageLayout.Undefined, ImageLayout.TransferDstOptimal);
+        TransitionImageLayout(
+            _textureImage,
+            Format.R8G8B8A8Srgb,
+            ImageLayout.Undefined,
+            ImageLayout.TransferDstOptimal
+        );
         CopyBufferToImage(stagingBuffer, _textureImage, (uint) img.Width, (uint) img.Height);
         TransitionImageLayout(
             _textureImage,
@@ -1506,7 +1515,7 @@ public unsafe class VulkanContext
 
             _vk!.CmdBindPipeline(_commandBuffers[i], PipelineBindPoint.Graphics, _graphicsPipeline);
 
-            // TODO:
+            // TODO: Use scene geometry
             var vertexBuffers = new Buffer[] { _mesh.VertexBuffer };
             var offsets = new ulong[] { 0 };
 
@@ -1560,8 +1569,10 @@ public unsafe class VulkanContext
 
         for (var i = 0; i < MaxFramesInFlight; i++)
         {
-            if (_vk!.CreateSemaphore(_device, semaphoreInfo, null, out _imageAvailableSemaphores[i]) != Result.Success ||
-                _vk!.CreateSemaphore(_device, semaphoreInfo, null, out _renderFinishedSemaphores[i]) != Result.Success ||
+            if (_vk!.CreateSemaphore(_device, semaphoreInfo, null, out _imageAvailableSemaphores[i]) !=
+                Result.Success ||
+                _vk!.CreateSemaphore(_device, semaphoreInfo, null, out _renderFinishedSemaphores[i]) !=
+                Result.Success ||
                 _vk!.CreateFence(_device, fenceInfo, null, out _inFlightFences[i]) != Result.Success)
             {
                 throw new Exception("failed to create synchronization objects for a frame!");
@@ -1569,12 +1580,24 @@ public unsafe class VulkanContext
         }
     }
 
-    private void UpdateUniformBuffer(uint currentImage)
+    private void UpdateUniformBuffer(Scene scene, uint currentImage)
     {
+        var camera = ComponentsBucket<Camera>.Bucket.FirstOrDefault();
+
         //Silk Window has timing information so we are skipping the time code.
         var time = (float) _window!.Time;
 
         UniformBufferObject ubo = new()
+#if true
+        {
+            Model = Matrix4X4<float>.Identity * Matrix4X4.CreateFromAxisAngle(
+                new Vector3D<float>(0, 0, 1),
+                Scalar.DegreesToRadians(0.0f)
+            ),
+            View = camera.View,
+            Proj = camera.Projection,
+        };
+#else
         {
             Model = Matrix4X4<float>.Identity * Matrix4X4.CreateFromAxisAngle(
                 new Vector3D<float>(0, 0, 1),
@@ -1592,6 +1615,7 @@ public unsafe class VulkanContext
                 10.0f
             ),
         };
+#endif
         ubo.Proj.M22 *= -1;
 
 
@@ -1608,7 +1632,7 @@ public unsafe class VulkanContext
         _vk!.UnmapMemory(_device, _uniformBuffersMemory![currentImage]);
     }
 
-    public void DrawFrame(double delta)
+    public void DrawFrame(Scene scene, double delta)
     {
         _vk!.WaitForFences(_device, 1, _inFlightFences![_currentFrame], true, ulong.MaxValue);
 
@@ -1632,7 +1656,7 @@ public unsafe class VulkanContext
             throw new Exception("failed to acquire swap chain image!");
         }
 
-        UpdateUniformBuffer(imageIndex);
+        UpdateUniformBuffer(scene, imageIndex);
 
         if (_imagesInFlight![imageIndex].Handle != default)
         {
@@ -1986,5 +2010,10 @@ public unsafe class VulkanContext
 
         _vk!.DestroyBuffer(_device, stagingBuffer, null);
         _vk!.FreeMemory(_device, stagingBufferMemory, null);
+    }
+
+    public void Dispose()
+    {
+        CleanUp();
     }
 }

@@ -1,7 +1,7 @@
 using Silk.NET.Maths;
 using Silk.NET.Windowing;
 
-namespace RenderCore;
+namespace EngineCore;
 
 public class WindowModule
 {

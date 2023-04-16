@@ -1,4 +1,4 @@
-namespace RenderCore;
+namespace EngineCore;
 
 public class Shared
 {
