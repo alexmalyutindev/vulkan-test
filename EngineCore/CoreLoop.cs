@@ -48,8 +48,8 @@ public class CoreLoop : IDisposable
         {
             Name = "Camera",
         };
-        cameraEntity.Transform.Matrix = Matrix4X4.CreateLookAt(
-            new Vector3D<float>(2, 2, 2),
+        cameraEntity.Transform.Matrix = Matrix4X4<float>.Identity * Matrix4X4.CreateLookAt(
+            new Vector3D<float>(1, 1, 1),
             new Vector3D<float>(0, 0, 0),
             new Vector3D<float>(0, 0, 1)
         );

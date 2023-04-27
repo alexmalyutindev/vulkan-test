@@ -44,6 +44,7 @@ public class Camera : Component
         var transform = Entity!.Transform;
         if (transform.WasChanged || forced)
         {
+            // TODO: Fix view matrix
             var worldToView = Matrix4X4<float>.Identity * Matrix4X4.CreateTranslation(transform.Position);
             View = Matrix4X4.Transform(worldToView, transform.Quaternion);
             Matrix4X4.Invert(View, out InvView);

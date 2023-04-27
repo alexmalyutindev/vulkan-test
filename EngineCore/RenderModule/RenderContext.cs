@@ -64,7 +64,7 @@ public unsafe class RenderModule : IDisposable
     private readonly IWindow? _window;
     private static Vk? _vk;
 
-    private Instance _instance;
+    private static Instance _instance;
 
     private ExtDebugUtils? _debugUtils;
     private DebugUtilsMessengerEXT _debugMessenger;
@@ -477,6 +477,16 @@ public unsafe class RenderModule : IDisposable
         SilkMarshal.Free((nint) createInfo.PpEnabledExtensionNames);
     }
 
+    public static bool TryGetDeviceExtension<T>(out T swapChain) where T : NativeExtension<Vk>
+    {
+        if (!_vk!.TryGetDeviceExtension(_instance, _device, out swapChain))
+        {
+            throw new NotSupportedException("VK_KHR_swapchain extension not found.");
+        }
+
+        return true;
+    }
+    
     private void CreateSwapChain()
     {
         var swapChainSupport = QuerySwapChainSupport(_physicalDevice);
@@ -1595,7 +1605,12 @@ public unsafe class RenderModule : IDisposable
                 Scalar.DegreesToRadians(0.0f)
             ),
             View = camera.View,
-            Proj = camera.Projection,
+            Proj = Matrix4X4.CreatePerspectiveFieldOfView(
+                Scalar.DegreesToRadians(camera.FieldOfView),
+                (float) _swapChainExtent.Width / _swapChainExtent.Height,
+                camera.NearPlane,
+                camera.FarPlane
+            ),
         };
 #else
         {
