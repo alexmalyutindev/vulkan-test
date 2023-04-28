@@ -9,35 +9,6 @@ using Image = Silk.NET.Vulkan.Image;
 
 namespace RenderCore.RenderModule;
 
-public class VulkanDevice
-{
-    public PhysicalDevice PhysicalDevice;
-    public Device LogicalDevice;
-    public Queue GraphicsQueue;
-    public Queue PresentQueue;
-}
-
-public class Swapchain
-{
-    public KhrSwapchain? _khrSwapChain;
-    public SwapchainKHR _swapChain;
-    public Image[]? _swapChainImages;
-    public Format _swapChainImageFormat;
-    public Extent2D _swapChainExtent;
-    private ImageView[]? _swapChainImageViews;
-    private Framebuffer[]? _swapChainFramebuffers;
-
-    public Swapchain(VulkanContext context) { }
-    public void Recreate(VulkanContext context) { }
-    public bool AcquireNextImageIndex(VulkanContext context, out uint index)
-    {
-        index = 0;
-        return false;
-    }
-    public void Present(VulkanContext context) { }
-    public void Destroy(VulkanContext context) { }
-}
-
 public unsafe partial class VulkanContext
 {
     private IWindow? _window;
@@ -66,12 +37,17 @@ public unsafe partial class VulkanContext
         SetupDebugMessenger();
         CreateSurface();
 
-        _device = new VulkanDevice();
+        _device = new VulkanDevice(this);
         PickPhysicalDevice();
         CreateLogicalDevice();
 
-        _swapchain = new Swapchain(this);
-        CreateSwapChain();
+        // Move 
+        _swapchain = new Swapchain(this, _device);
+    }
+
+    public void Destroy()
+    {
+        _swapchain.Destroy(_vk);   
     }
 
     private void CreateInstance()

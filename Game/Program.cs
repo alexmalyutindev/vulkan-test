@@ -1,5 +1,15 @@
 ﻿using Engine;
 using EngineCore;
+using RenderCore.RenderModule;
+
+
+var windowModule = new WindowModule();
+windowModule.Init();
+var vulkanContext = new VulkanContext();
+vulkanContext.InitVulkan(windowModule.Window);
+
+vulkanContext.Destroy();
+return;
 
 // var engine = new EngineCore();
 // engine.Run();

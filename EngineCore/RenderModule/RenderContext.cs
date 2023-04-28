@@ -137,14 +137,18 @@ public unsafe class RenderModule : IDisposable
         CreateSurface();
         PickPhysicalDevice();
         CreateLogicalDevice();
+        // TODO:
         CreateSwapChain();
         CreateImageViews();
+        //
         CreateRenderPass();
         CreateDescriptorSetLayout();
         CreateGraphicsPipeline();
         CreateCommandPool();
         CreateDepthResources();
+        // TODO: 
         CreateFramebuffers();
+        //
         CreateTextureImage();
         CreateTextureImageView();
         CreateTextureSampler();

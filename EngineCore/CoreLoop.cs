@@ -6,6 +6,8 @@ namespace EngineCore;
 
 using Silk.NET.Windowing;
 
+// TODO: Make 'Application' Layer on top of CoreLoop as entry point and
+// host other user code libs.
 public class CoreLoop : IDisposable
 {
     private readonly WindowModule _windowModule;

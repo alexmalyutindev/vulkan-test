@@ -8,6 +8,25 @@ namespace RenderCore.RenderModule;
 
 public unsafe partial class VulkanContext
 {
+    public class VulkanDevice
+    {
+        private readonly VulkanContext _context;
+        public PhysicalDevice PhysicalDevice;
+        public Device LogicalDevice;
+        public Queue GraphicsQueue;
+        public Queue PresentQueue;
+
+        public VulkanDevice(VulkanContext context)
+        {
+            _context = context;
+        }
+
+        public bool TryGetDeviceExtension(out KhrSwapchain? khrSwapChain)
+        {
+            return _context._vk!.TryGetDeviceExtension(_context._instance, LogicalDevice, out khrSwapChain);
+        }
+    }
+
     struct QueueFamilyIndices
     {
         public uint? GraphicsFamily { get; set; }
@@ -140,7 +159,7 @@ public unsafe partial class VulkanContext
 
         return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.SamplerAnisotropy;
     }
-    
+
     private bool CheckDeviceExtensionsSupport(PhysicalDevice device)
     {
         uint extentionsCount = 0;

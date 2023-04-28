@@ -1,96 +1,220 @@
 using Silk.NET.Vulkan;
+using Silk.NET.Vulkan.Extensions.KHR;
 using Image = Silk.NET.Vulkan.Image;
 
 namespace RenderCore.RenderModule;
 
 public unsafe partial class VulkanContext
 {
-    private struct SwapChainSupportDetails
+    public class Swapchain
     {
-        public SurfaceCapabilitiesKHR Capabilities;
-        public SurfaceFormatKHR[] Formats;
-        public PresentModeKHR[] PresentModes;
-    }
+        public KhrSwapchain? _khrSwapChain;
+        public SwapchainKHR _swapChain;
+        public Image[]? _swapChainImages;
+        public Format _swapChainImageFormat;
+        public Extent2D _swapChainExtent;
+        public ImageView[]? _swapChainImageViews;
+        public Framebuffer[]? _swapChainFramebuffers;
 
-    private void CreateSwapChain()
-    {
-        var swapChainSupport = QuerySwapChainSupport(_device.PhysicalDevice);
+        private readonly VulkanContext _context;
+        private readonly VulkanDevice _device;
 
-        var surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
-        var presentMode = ChoosePresentMode(swapChainSupport.PresentModes);
-        var extent = ChooseSwapExtent(swapChainSupport.Capabilities);
-
-        var imageCount = swapChainSupport.Capabilities.MinImageCount + 1;
-        if (swapChainSupport.Capabilities.MaxImageCount > 0 && imageCount > swapChainSupport.Capabilities.MaxImageCount)
+        public Swapchain(VulkanContext context, VulkanDevice device)
         {
-            imageCount = swapChainSupport.Capabilities.MaxImageCount;
+            _context = context;
+            _device = device;
+            CreateSwapChain();
+            CreateImageViews();
         }
 
-        SwapchainCreateInfoKHR creatInfo = new()
+        public void Recreate()
         {
-            SType = StructureType.SwapchainCreateInfoKhr,
-            Surface = _surface,
+            // TODO:
+        }
 
-            MinImageCount = imageCount,
-            ImageFormat = surfaceFormat.Format,
-            ImageColorSpace = surfaceFormat.ColorSpace,
-            ImageExtent = extent,
-            ImageArrayLayers = 1,
-            ImageUsage = ImageUsageFlags.ColorAttachmentBit,
-        };
-
-        var indices = FindQueueFamilies(_device.PhysicalDevice);
-        var queueFamilyIndices = stackalloc[] { indices.GraphicsFamily!.Value, indices.PresentFamily!.Value };
-
-        if (indices.GraphicsFamily != indices.PresentFamily)
+        public bool AcquireNextImageIndex(VulkanContext context, out uint index)
         {
+            index = 0;
+            return false;
+        }
+
+        public void Present(VulkanContext context)
+        {
+            // TODO:
+        }
+
+        public void Destroy(Vk vk)
+        {
+            // TODO:
+            // vk.DestroyImageView(_device, _depthImageView, null);
+            // vk.DestroyImage(_device, _depthImage, null);
+            // vk.FreeMemory(_device, _depthImageMemory, null);
+
+            foreach (var framebuffer in _swapChainFramebuffers!)
+            {
+                vk.DestroyFramebuffer(_device.LogicalDevice, framebuffer, null);
+            }
+
+            // fixed (CommandBuffer* commandBuffersPtr = _commandBuffers)
+            // {
+            //     vk.FreeCommandBuffers(_device, _commandPool, (uint) _commandBuffers!.Length, commandBuffersPtr);
+            // }
+
+            // vk.DestroyPipeline(_device, _graphicsPipeline, null);
+            // vk.DestroyPipelineLayout(_device, _pipelineLayout, null);
+            // vk.DestroyRenderPass(_device, _renderPass, null);
+
+            foreach (var imageView in _swapChainImageViews!)
+            {
+                vk.DestroyImageView(_device.LogicalDevice, imageView, null);
+            }
+
+            _khrSwapChain!.DestroySwapchain(_device.LogicalDevice, _swapChain, null);
+
+            // for (int i = 0; i < _swapChainImages!.Length; i++)
+            // {
+            //     vk.DestroyBuffer(_device, _uniformBuffers![i], null);
+            //     vk.FreeMemory(_device, _uniformBuffersMemory![i], null);
+            // }
+            //
+            // vk.DestroyDescriptorPool(_device, _descriptorPool, null);
+        }
+
+        private void CreateSwapChain()
+        {
+            var swapChainSupport = _context.QuerySwapChainSupport(_device.PhysicalDevice);
+
+            var surfaceFormat = _context.ChooseSwapSurfaceFormat(swapChainSupport.Formats);
+            var presentMode = _context.ChoosePresentMode(swapChainSupport.PresentModes);
+            var extent = _context.ChooseSwapExtent(swapChainSupport.Capabilities);
+
+            var imageCount = swapChainSupport.Capabilities.MinImageCount + 1;
+            if (swapChainSupport.Capabilities.MaxImageCount > 0 &&
+                imageCount > swapChainSupport.Capabilities.MaxImageCount)
+            {
+                imageCount = swapChainSupport.Capabilities.MaxImageCount;
+            }
+
+            SwapchainCreateInfoKHR creatInfo = new()
+            {
+                SType = StructureType.SwapchainCreateInfoKhr,
+                Surface = _context._surface,
+
+                MinImageCount = imageCount,
+                ImageFormat = surfaceFormat.Format,
+                ImageColorSpace = surfaceFormat.ColorSpace,
+                ImageExtent = extent,
+                ImageArrayLayers = 1,
+                ImageUsage = ImageUsageFlags.ColorAttachmentBit,
+            };
+
+            var indices = _context.FindQueueFamilies(_device.PhysicalDevice);
+            var queueFamilyIndices = stackalloc[] { indices.GraphicsFamily!.Value, indices.PresentFamily!.Value };
+
+            if (indices.GraphicsFamily != indices.PresentFamily)
+            {
+                creatInfo = creatInfo with
+                {
+                    ImageSharingMode = SharingMode.Concurrent,
+                    QueueFamilyIndexCount = 2,
+                    PQueueFamilyIndices = queueFamilyIndices,
+                };
+            }
+            else
+            {
+                creatInfo.ImageSharingMode = SharingMode.Exclusive;
+            }
+
             creatInfo = creatInfo with
             {
-                ImageSharingMode = SharingMode.Concurrent,
-                QueueFamilyIndexCount = 2,
-                PQueueFamilyIndices = queueFamilyIndices,
+                PreTransform = swapChainSupport.Capabilities.CurrentTransform,
+                CompositeAlpha = CompositeAlphaFlagsKHR.OpaqueBitKhr,
+                PresentMode = presentMode,
+                Clipped = true,
             };
-        }
-        else
-        {
-            creatInfo.ImageSharingMode = SharingMode.Exclusive;
-        }
 
-        creatInfo = creatInfo with
-        {
-            PreTransform = swapChainSupport.Capabilities.CurrentTransform,
-            CompositeAlpha = CompositeAlphaFlagsKHR.OpaqueBitKhr,
-            PresentMode = presentMode,
-            Clipped = true,
-        };
-
-        if (_swapchain._khrSwapChain is null)
-        {
-            if (!_vk!.TryGetDeviceExtension(_instance, _device.LogicalDevice, out _swapchain._khrSwapChain))
+            if (_khrSwapChain is null)
             {
-                throw new NotSupportedException("VK_KHR_swapchain extension not found.");
+                
+                if (!_device.TryGetDeviceExtension(out _khrSwapChain))
+                {
+                    throw new NotSupportedException("VK_KHR_swapchain extension not found.");
+                }
+            }
+
+            if (_khrSwapChain!.CreateSwapchain(
+                    _device.LogicalDevice,
+                    creatInfo,
+                    null,
+                    out _swapChain
+                ) != Result.Success)
+            {
+                throw new Exception("failed to create swap chain!");
+            }
+
+            _khrSwapChain.GetSwapchainImages(_device.LogicalDevice, _swapChain, ref imageCount, null);
+            _swapChainImages = new Image[imageCount];
+            fixed (Image* swapChainImagesPtr = _swapChainImages)
+            {
+                _khrSwapChain.GetSwapchainImages(_device.LogicalDevice, _swapChain, ref imageCount, swapChainImagesPtr);
+            }
+
+            _swapChainImageFormat = surfaceFormat.Format;
+            _swapChainExtent = extent;
+        }
+
+        private void CreateImageViews()
+        {
+            _swapChainImageViews = new ImageView[_swapChainImages!.Length];
+
+            for (int i = 0; i < _swapChainImages.Length; i++)
+            {
+                _swapChainImageViews[i] = CreateImageView(
+                    _swapChainImages[i],
+                    _swapChainImageFormat,
+                    ImageAspectFlags.ColorBit
+                );
             }
         }
 
-        if (_swapchain._khrSwapChain!.CreateSwapchain(
-                _device.LogicalDevice,
-                creatInfo,
-                null,
-                out _swapchain._swapChain
-            ) != Result.Success)
+        private ImageView CreateImageView(Image image, Format format, ImageAspectFlags aspectFlags)
         {
-            throw new Exception("failed to create swap chain!");
-        }
+            ImageViewCreateInfo createInfo = new()
+            {
+                SType = StructureType.ImageViewCreateInfo,
+                Image = image,
+                ViewType = ImageViewType.Type2D,
+                Format = format,
+                //Components =
+                //    {
+                //        R = ComponentSwizzle.Identity,
+                //        G = ComponentSwizzle.Identity,
+                //        B = ComponentSwizzle.Identity,
+                //        A = ComponentSwizzle.Identity,
+                //    },
+                SubresourceRange =
+                {
+                    AspectMask = aspectFlags,
+                    BaseMipLevel = 0,
+                    LevelCount = 1,
+                    BaseArrayLayer = 0,
+                    LayerCount = 1,
+                }
+            };
 
-        _swapchain._khrSwapChain.GetSwapchainImages(_device.LogicalDevice, _swapchain._swapChain, ref imageCount, null);
-        _swapchain._swapChainImages = new Image[imageCount];
-        fixed (Image* swapChainImagesPtr = _swapchain._swapChainImages)
-        {
-            _swapchain._khrSwapChain.GetSwapchainImages(_device.LogicalDevice, _swapchain._swapChain, ref imageCount, swapChainImagesPtr);
-        }
+            if (_context._vk!.CreateImageView(
+                    _device.LogicalDevice,
+                    createInfo,
+                    null,
+                    out var imageView
+                ) !=
+                Result.Success)
+            {
+                throw new Exception("failed to create image views!");
+            }
 
-        _swapchain._swapChainImageFormat = surfaceFormat.Format;
-        _swapchain._swapChainExtent = extent;
+            return imageView;
+        }
     }
 
     private SwapChainSupportDetails QuerySwapChainSupport(PhysicalDevice physicalDevice)
@@ -138,7 +262,14 @@ public unsafe partial class VulkanContext
 
         return details;
     }
-    
+
+    private struct SwapChainSupportDetails
+    {
+        public SurfaceCapabilitiesKHR Capabilities;
+        public SurfaceFormatKHR[] Formats;
+        public PresentModeKHR[] PresentModes;
+    }
+
     private SurfaceFormatKHR ChooseSwapSurfaceFormat(IReadOnlyList<SurfaceFormatKHR> availableFormats)
     {
         foreach (var availableFormat in availableFormats)
@@ -152,7 +283,7 @@ public unsafe partial class VulkanContext
 
         return availableFormats[0];
     }
-    
+
     private PresentModeKHR ChoosePresentMode(IReadOnlyList<PresentModeKHR> availablePresentModes)
     {
         foreach (var availablePresentMode in availablePresentModes)
@@ -165,7 +296,7 @@ public unsafe partial class VulkanContext
 
         return PresentModeKHR.FifoKhr;
     }
-    
+
     private Extent2D ChooseSwapExtent(SurfaceCapabilitiesKHR capabilities)
     {
         if (capabilities.CurrentExtent.Width != uint.MaxValue)
