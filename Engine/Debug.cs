@@ -14,6 +14,8 @@ public static class Debug
         stringBuilder.Append(line);
         stringBuilder.AppendLine();
         stringBuilder.Append(message);
+        
+        Console.WriteLine(stringBuilder.ToString());
     }
     
     public static void Warning(string message, [CallerFilePath] string path = "", [CallerLineNumber]int line = 0)
@@ -25,5 +27,7 @@ public static class Debug
         stringBuilder.Append(line);
         stringBuilder.AppendLine();
         stringBuilder.Append(message);
+        
+        Console.WriteLine(stringBuilder.ToString());
     }
 }

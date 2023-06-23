@@ -9,6 +9,8 @@ var vulkanContext = new VulkanContext();
 vulkanContext.InitVulkan(windowModule.Window);
 
 vulkanContext.Destroy();
+
+Debug.Log("Success!");
 return;
 
 // var engine = new EngineCore();

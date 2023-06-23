@@ -12,7 +12,7 @@ namespace RenderCore.RenderModule;
 public unsafe partial class VulkanContext
 {
     private IWindow? _window;
-    private Vk? _vk;
+    private Vk _vk;
     private Instance _instance;
 
     // Debug
@@ -26,7 +26,7 @@ public unsafe partial class VulkanContext
     private VulkanDevice _device;
     
     // TODO: Group by render pass, for now just embed it
-    private Swapchain _swapchain;
+    private RenderPass _renderPass;
 
     private bool _enableValidationLayers;
 
@@ -42,12 +42,12 @@ public unsafe partial class VulkanContext
         CreateLogicalDevice();
 
         // Move 
-        _swapchain = new Swapchain(this, _device);
+        _renderPass = new RenderPass(this);
     }
 
     public void Destroy()
     {
-        _swapchain.Destroy(_vk);   
+        _renderPass.Destroy();
     }
 
     private void CreateInstance()

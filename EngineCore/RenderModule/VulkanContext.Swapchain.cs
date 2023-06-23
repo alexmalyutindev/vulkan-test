@@ -15,21 +15,31 @@ public unsafe partial class VulkanContext
         public Extent2D _swapChainExtent;
         public ImageView[]? _swapChainImageViews;
         public Framebuffer[]? _swapChainFramebuffers;
+        
+        // TODO: Config for swapchain content
+        // - Color: 
+        //   - Format
+        //   - Resolution
+        // - Depth/Stencil
 
         private readonly VulkanContext _context;
+        private readonly Silk.NET.Vulkan.RenderPass _renderPass;
         private readonly VulkanDevice _device;
 
-        public Swapchain(VulkanContext context, VulkanDevice device)
+        public Swapchain(VulkanContext context, Silk.NET.Vulkan.RenderPass renderPass)
         {
             _context = context;
-            _device = device;
+            _renderPass = renderPass;
+            _device = context._device;
             CreateSwapChain();
             CreateImageViews();
+            CreateFramebuffers();
         }
 
         public void Recreate()
         {
             // TODO:
+            _swapChainFramebuffers = Array.Empty<Framebuffer>();
         }
 
         public bool AcquireNextImageIndex(VulkanContext context, out uint index)
@@ -174,6 +184,37 @@ public unsafe partial class VulkanContext
                     _swapChainImageFormat,
                     ImageAspectFlags.ColorBit
                 );
+            }
+        }
+
+        private void CreateFramebuffers()
+        {
+            _swapChainFramebuffers = new Framebuffer[_swapChainImageViews!.Length];
+
+            // TODO: RenderPass and RenderSubPass
+            for (int i = 0; i < _swapChainImageViews.Length; i++)
+            {
+                // TODO: Configure targets
+                var attachments = new[] { _swapChainImageViews[i] }; // , _depthImageView };
+            
+                fixed (ImageView* attachmentsPtr = attachments)
+                {
+                    FramebufferCreateInfo framebufferInfo = new()
+                    {
+                        SType = StructureType.FramebufferCreateInfo,
+                        RenderPass = _renderPass,
+                        AttachmentCount = (uint) attachments.Length,
+                        PAttachments = attachmentsPtr,
+                        Width = _swapChainExtent.Width,
+                        Height = _swapChainExtent.Height,
+                        Layers = 1,
+                    };
+            
+                    if (_context._vk.CreateFramebuffer(_device.LogicalDevice, framebufferInfo, null, out _swapChainFramebuffers[i]) != Result.Success)
+                    {
+                        throw new Exception("failed to create framebuffer!");
+                    }
+                }
             }
         }
 
