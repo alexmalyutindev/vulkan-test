@@ -5,7 +5,6 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Silk.NET.Windowing;
-using Image = Silk.NET.Vulkan.Image;
 
 namespace RenderCore.RenderModule;
 
@@ -41,8 +40,9 @@ public unsafe partial class VulkanContext
         PickPhysicalDevice();
         CreateLogicalDevice();
 
-        // Move 
+        // TODO: Move 
         _renderPass = new RenderPass(this);
+        _renderPass.Initialize();
     }
 
     public void Destroy()

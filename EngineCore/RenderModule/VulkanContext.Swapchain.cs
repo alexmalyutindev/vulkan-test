@@ -8,14 +8,20 @@ public unsafe partial class VulkanContext
 {
     public class Swapchain
     {
-        public KhrSwapchain? _khrSwapChain;
-        public SwapchainKHR _swapChain;
-        public Image[]? _swapChainImages;
+        private KhrSwapchain? _khrSwapChain;
+        private SwapchainKHR _swapChain;
         public Format _swapChainImageFormat;
-        public Extent2D _swapChainExtent;
-        public ImageView[]? _swapChainImageViews;
-        public Framebuffer[]? _swapChainFramebuffers;
+        private Extent2D _swapChainExtent;
+
+        private Image[]? _swapChainImages;
+        private ImageView[]? _swapChainImageViews;
         
+        private Image _depthImage;
+        private ImageView _depthImageView;
+        private DeviceMemory _depthImageMemory;
+
+        private Framebuffer[]? _swapChainFramebuffers;
+
         // TODO: Config for swapchain content
         // - Color: 
         //   - Format
@@ -23,23 +29,20 @@ public unsafe partial class VulkanContext
         // - Depth/Stencil
 
         private readonly VulkanContext _context;
-        private readonly Silk.NET.Vulkan.RenderPass _renderPass;
+        private readonly RenderPass _renderPass;
         private readonly VulkanDevice _device;
 
-        public Swapchain(VulkanContext context, Silk.NET.Vulkan.RenderPass renderPass)
+        public Swapchain(VulkanContext context, RenderPass renderPass)
         {
             _context = context;
             _renderPass = renderPass;
             _device = context._device;
-            CreateSwapChain();
-            CreateImageViews();
-            CreateFramebuffers();
         }
 
         public void Recreate()
         {
             // TODO:
-            _swapChainFramebuffers = Array.Empty<Framebuffer>();
+            // _swapChainFramebuffers = Array.Empty<Framebuffer>();
         }
 
         public bool AcquireNextImageIndex(VulkanContext context, out uint index)
@@ -55,7 +58,7 @@ public unsafe partial class VulkanContext
 
         public void Destroy(Vk vk)
         {
-            // TODO:
+            // TODO: Depth
             // vk.DestroyImageView(_device, _depthImageView, null);
             // vk.DestroyImage(_device, _depthImage, null);
             // vk.FreeMemory(_device, _depthImageMemory, null);
@@ -65,6 +68,7 @@ public unsafe partial class VulkanContext
                 vk.DestroyFramebuffer(_device.LogicalDevice, framebuffer, null);
             }
 
+            // TODO: Command Buffers!
             // fixed (CommandBuffer* commandBuffersPtr = _commandBuffers)
             // {
             //     vk.FreeCommandBuffers(_device, _commandPool, (uint) _commandBuffers!.Length, commandBuffersPtr);
@@ -90,7 +94,7 @@ public unsafe partial class VulkanContext
             // vk.DestroyDescriptorPool(_device, _descriptorPool, null);
         }
 
-        private void CreateSwapChain()
+        public void CreateSwapChain()
         {
             var swapChainSupport = _context.QuerySwapChainSupport(_device.PhysicalDevice);
 
@@ -105,7 +109,7 @@ public unsafe partial class VulkanContext
                 imageCount = swapChainSupport.Capabilities.MaxImageCount;
             }
 
-            SwapchainCreateInfoKHR creatInfo = new()
+            SwapchainCreateInfoKHR createInfo = new()
             {
                 SType = StructureType.SwapchainCreateInfoKhr,
                 Surface = _context._surface,
@@ -123,7 +127,7 @@ public unsafe partial class VulkanContext
 
             if (indices.GraphicsFamily != indices.PresentFamily)
             {
-                creatInfo = creatInfo with
+                createInfo = createInfo with
                 {
                     ImageSharingMode = SharingMode.Concurrent,
                     QueueFamilyIndexCount = 2,
@@ -132,10 +136,10 @@ public unsafe partial class VulkanContext
             }
             else
             {
-                creatInfo.ImageSharingMode = SharingMode.Exclusive;
+                createInfo.ImageSharingMode = SharingMode.Exclusive;
             }
 
-            creatInfo = creatInfo with
+            createInfo = createInfo with
             {
                 PreTransform = swapChainSupport.Capabilities.CurrentTransform,
                 CompositeAlpha = CompositeAlphaFlagsKHR.OpaqueBitKhr,
@@ -145,7 +149,6 @@ public unsafe partial class VulkanContext
 
             if (_khrSwapChain is null)
             {
-                
                 if (!_device.TryGetDeviceExtension(out _khrSwapChain))
                 {
                     throw new NotSupportedException("VK_KHR_swapchain extension not found.");
@@ -154,7 +157,7 @@ public unsafe partial class VulkanContext
 
             if (_khrSwapChain!.CreateSwapchain(
                     _device.LogicalDevice,
-                    creatInfo,
+                    createInfo,
                     null,
                     out _swapChain
                 ) != Result.Success)
@@ -173,7 +176,7 @@ public unsafe partial class VulkanContext
             _swapChainExtent = extent;
         }
 
-        private void CreateImageViews()
+        public void CreateImageViews()
         {
             _swapChainImageViews = new ImageView[_swapChainImages!.Length];
 
@@ -187,7 +190,24 @@ public unsafe partial class VulkanContext
             }
         }
 
-        private void CreateFramebuffers()
+        public void CreateDepthResources()
+        {
+            Format depthFormat = _context.FindDepthFormat();
+
+            _context.CreateImage(
+                _swapChainExtent.Width,
+                _swapChainExtent.Height,
+                depthFormat,
+                ImageTiling.Optimal,
+                ImageUsageFlags.DepthStencilAttachmentBit,
+                MemoryPropertyFlags.DeviceLocalBit,
+                ref _depthImage,
+                ref _depthImageMemory
+            );
+            _depthImageView = CreateImageView(_depthImage, depthFormat, ImageAspectFlags.DepthBit);
+        }
+
+        public void CreateFramebuffers()
         {
             _swapChainFramebuffers = new Framebuffer[_swapChainImageViews!.Length];
 
@@ -195,22 +215,27 @@ public unsafe partial class VulkanContext
             for (int i = 0; i < _swapChainImageViews.Length; i++)
             {
                 // TODO: Configure targets
-                var attachments = new[] { _swapChainImageViews[i] }; // , _depthImageView };
-            
+                ImageView[] attachments = { _swapChainImageViews[i], _depthImageView };
+
                 fixed (ImageView* attachmentsPtr = attachments)
                 {
                     FramebufferCreateInfo framebufferInfo = new()
                     {
                         SType = StructureType.FramebufferCreateInfo,
-                        RenderPass = _renderPass,
+                        RenderPass = _renderPass._renderPass,
                         AttachmentCount = (uint) attachments.Length,
                         PAttachments = attachmentsPtr,
                         Width = _swapChainExtent.Width,
                         Height = _swapChainExtent.Height,
                         Layers = 1,
                     };
-            
-                    if (_context._vk.CreateFramebuffer(_device.LogicalDevice, framebufferInfo, null, out _swapChainFramebuffers[i]) != Result.Success)
+
+                    if (_context._vk.CreateFramebuffer(
+                            _device.LogicalDevice,
+                            framebufferInfo,
+                            null,
+                            out _swapChainFramebuffers[i]
+                        ) != Result.Success)
                     {
                         throw new Exception("failed to create framebuffer!");
                     }
@@ -226,13 +251,13 @@ public unsafe partial class VulkanContext
                 Image = image,
                 ViewType = ImageViewType.Type2D,
                 Format = format,
-                //Components =
-                //    {
-                //        R = ComponentSwizzle.Identity,
-                //        G = ComponentSwizzle.Identity,
-                //        B = ComponentSwizzle.Identity,
-                //        A = ComponentSwizzle.Identity,
-                //    },
+                Components =
+                {
+                    R = ComponentSwizzle.Identity,
+                    G = ComponentSwizzle.Identity,
+                    B = ComponentSwizzle.Identity,
+                    A = ComponentSwizzle.Identity,
+                },
                 SubresourceRange =
                 {
                     AspectMask = aspectFlags,

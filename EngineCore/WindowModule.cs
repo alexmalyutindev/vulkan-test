@@ -8,7 +8,8 @@ public class WindowModule
     const int Width = 800;
     const int Height = 600;
 
-    public IWindow? Window;
+    public IWindow Window => _window!;
+    private IWindow? _window;
 
     public void Init()
     {
@@ -18,10 +19,10 @@ public class WindowModule
             Title = "Vulkan",
         };
 
-        Window = Silk.NET.Windowing.Window.Create(options);
-        Window.Initialize();
+        _window = Silk.NET.Windowing.Window.Create(options);
+        _window.Initialize();
 
-        if (Window.VkSurface is null)
+        if (_window.VkSurface is null)
         {
             throw new Exception("Windowing platform doesn't support Vulkan.");
         }

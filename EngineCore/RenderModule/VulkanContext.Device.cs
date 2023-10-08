@@ -40,7 +40,9 @@ public unsafe partial class VulkanContext
 
     private readonly string[] _deviceExtensions = new[]
     {
-        KhrSwapchain.ExtensionName
+        KhrSwapchain.ExtensionName,
+        // TODO: Add portability if osx arm64!
+        "VK_KHR_portability_subset"
     };
 
     private void CreateLogicalDevice()
