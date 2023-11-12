@@ -6,7 +6,7 @@ using Silk.NET.Vulkan.Extensions.KHR;
 
 namespace EngineCore.Rendering.Core;
 
-public unsafe partial class VulkanContext
+public sealed unsafe partial class VulkanContext
 {
     public class VulkanDevice
     {

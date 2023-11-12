@@ -8,13 +8,18 @@ public partial class VulkanContext
     {
         public Silk.NET.Vulkan.RenderPass Handle => _renderPass;
 
+        private readonly Vk _vk;
         private readonly VulkanContext _context;
+        private readonly VulkanDevice _device;
+
         private Silk.NET.Vulkan.RenderPass _renderPass;
 
+        // TODO: Make it configurable
         public RenderPass(VulkanContext context)
         {
             _context = context;
-            // TODO: Make it configurable
+            _vk = context._vk;
+            _device = _context._device;
         }
 
         public unsafe void CreateRenderPass(Format colorFormat)
@@ -66,11 +71,9 @@ public partial class VulkanContext
             {
                 SrcSubpass = Vk.SubpassExternal,
                 DstSubpass = 0,
-                SrcStageMask = PipelineStageFlags.ColorAttachmentOutputBit |
-                    PipelineStageFlags.EarlyFragmentTestsBit,
+                SrcStageMask = PipelineStageFlags.ColorAttachmentOutputBit | PipelineStageFlags.EarlyFragmentTestsBit,
                 SrcAccessMask = 0,
-                DstStageMask = PipelineStageFlags.ColorAttachmentOutputBit |
-                    PipelineStageFlags.EarlyFragmentTestsBit,
+                DstStageMask = PipelineStageFlags.ColorAttachmentOutputBit | PipelineStageFlags.EarlyFragmentTestsBit,
                 DstAccessMask = AccessFlags.ColorAttachmentWriteBit | AccessFlags.DepthStencilAttachmentWriteBit
             };
 
@@ -89,13 +92,7 @@ public partial class VulkanContext
                     PDependencies = &dependency,
                 };
 
-                if (_context._vk.CreateRenderPass(
-                        _context._device.LogicalDevice,
-                        renderPassInfo,
-                        null,
-                        out _renderPass
-                    ) !=
-                    Result.Success)
+                if (_vk.CreateRenderPass(_device.LogicalDevice, renderPassInfo, null, out _renderPass) != Result.Success)
                 {
                     throw new Exception("Failed to create render pass!");
                 }
@@ -108,7 +105,10 @@ public partial class VulkanContext
 
         public void Destroy()
         {
-            // TODO: Destroy render pass.
+            unsafe
+            {
+                _vk.DestroyRenderPass(_device.LogicalDevice, _renderPass, null);
+            }
         }
     }
 }

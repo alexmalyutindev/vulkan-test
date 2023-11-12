@@ -9,30 +9,7 @@ namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {
-    public void InitVulkan(IWindow window)
-    {
-        _window = window;
-        CreateInstance();
-        SetupDebugMessenger();
-        CreateSurface();
-
-        _device = new VulkanDevice(this);
-        PickPhysicalDevice();
-        CreateLogicalDevice();
-        
-        _swapchain = new Swapchain(this);
-        _swapchain.CreateSwapChain();
-        {
-            _swapchain.CreateImageViews();
-            _swapchain.CreateDepthResources();
-        }
-
-        // TODO: Make configurable
-        _renderPass = new RenderPass(this);
-        _renderPass.CreateRenderPass(_swapchain.Format);
-        
-        _swapchain.CreateFramebuffers(_renderPass);
-    }
+    private GraphicsPipeline _graphicsPipeline;
 
     private void CreateInstance()
     {

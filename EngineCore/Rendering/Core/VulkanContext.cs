@@ -6,7 +6,7 @@ using Silk.NET.Windowing;
 
 namespace EngineCore.Rendering.Core;
 
-public unsafe partial class VulkanContext
+public sealed unsafe partial class VulkanContext
 {
     private IWindow? _window;
     private Vk _vk;
@@ -15,6 +15,7 @@ public unsafe partial class VulkanContext
     // Debug
     private ExtDebugUtils? _debugUtils;
     private DebugUtilsMessengerEXT _debugMessenger;
+    private bool _enableValidationLayers;
 
     // Surface 
     private KhrSurface? _khrSurface;
@@ -27,12 +28,50 @@ public unsafe partial class VulkanContext
     // TODO: Group by render pass, for now just embed it
     private RenderPass _renderPass;
 
-    private bool _enableValidationLayers;
+    public void InitVulkan(IWindow window)
+    {
+        _window = window;
+        CreateInstance();
+        SetupDebugMessenger();
+        CreateSurface();
+
+        _device = new VulkanDevice(this);
+        PickPhysicalDevice();
+        CreateLogicalDevice();
+
+        _swapchain = new Swapchain(this);
+        _swapchain.CreateSwapChain();
+        {
+            _swapchain.CreateImageViews();
+            _swapchain.CreateDepthResources();
+        }
+
+        // TODO: Make configurable
+        _renderPass = new RenderPass(this);
+        _renderPass.CreateRenderPass(_swapchain.Format);
+        _swapchain.CreateFramebuffers(_renderPass);
+
+        _graphicsPipeline = new GraphicsPipeline(this);
+
+        _graphicsPipeline.CreateDescriptorSetLayout();
+        _graphicsPipeline.CreateGraphicsPipeline(
+            _renderPass,
+            "shaders/vert.spv",
+            "shaders/frag.spv",
+            _swapchain.Extent
+        );
+    }
+
+    public void Render()
+    {
+        _swapchain.Present();
+    }
 
     public void Destroy()
     {
         _renderPass.Destroy();
-        _swapchain.Destroy(_vk);
+        _swapchain.Destroy();
+        _graphicsPipeline.Destroy();
     }
 
     private string[] GetRequiredExtensions(IView window)

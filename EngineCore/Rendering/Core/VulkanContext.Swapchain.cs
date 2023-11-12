@@ -19,18 +19,13 @@ public unsafe partial class VulkanContext
         
         private Image[]? _swapChainImages;
         private ImageView[]? _swapChainImageViews;
+        private Framebuffer[]? _swapChainFramebuffers;
+        private CommandBuffer[]? _commandBuffers;
 
+        // ???
         private Image _depthImage;
         private ImageView _depthImageView;
         private DeviceMemory _depthImageMemory;
-
-        private Framebuffer[]? _swapChainFramebuffers;
-
-        // TODO: Config for swapchain content
-        // - Color: 
-        //   - Format
-        //   - Resolution
-        // - Depth/Stencil
 
         private readonly Vk _vk;
         private readonly VulkanContext _context;
@@ -55,12 +50,12 @@ public unsafe partial class VulkanContext
             return false;
         }
 
-        public void Present(VulkanContext context)
+        public void Present()
         {
             // TODO:
         }
 
-        public void Destroy(Vk vk)
+        public void Destroy()
         {
             // TODO: Depth
             // vk.DestroyImageView(_device, _depthImageView, null);
@@ -69,7 +64,7 @@ public unsafe partial class VulkanContext
 
             foreach (var framebuffer in _swapChainFramebuffers!)
             {
-                vk.DestroyFramebuffer(_device.LogicalDevice, framebuffer, null);
+                _vk.DestroyFramebuffer(_device.LogicalDevice, framebuffer, null);
             }
 
             // TODO: Command Buffers!
@@ -84,7 +79,7 @@ public unsafe partial class VulkanContext
 
             foreach (var imageView in _swapChainImageViews!)
             {
-                vk.DestroyImageView(_device.LogicalDevice, imageView, null);
+                _vk.DestroyImageView(_device.LogicalDevice, imageView, null);
             }
 
             _khrSwapChain!.DestroySwapchain(_device.LogicalDevice, _swapChain, null);
