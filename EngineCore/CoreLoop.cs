@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using EngineCore.Rendering.Core;
 using MtgWeb.Core;
 using Silk.NET.Maths;
 
@@ -11,7 +12,7 @@ using Silk.NET.Windowing;
 public class CoreLoop : IDisposable
 {
     private readonly WindowModule _windowModule;
-    private readonly RenderModule _renderModule;
+    private readonly ExampleRenderer _exampleRenderer;
     private readonly ScriptingModule _scriptingModule;
     private Stopwatch _stopwatch;
     private Scene _currentScene;
@@ -24,8 +25,8 @@ public class CoreLoop : IDisposable
         _windowModule = new WindowModule();
         _windowModule.Init();
 
-        _renderModule = new RenderModule(_windowModule.Window);
-        _renderModule.InitVulkan();
+        _exampleRenderer = new ExampleRenderer(_windowModule.Window);
+        _exampleRenderer.InitVulkan();
 
         _scriptingModule = new ScriptingModule();
 
@@ -40,7 +41,7 @@ public class CoreLoop : IDisposable
     public void Run()
     {
         _windowModule.Window.Run();
-        _renderModule.DeviceWaitIdle();
+        _exampleRenderer.DeviceWaitIdle();
     }
 
     private void Initialise()
@@ -87,7 +88,7 @@ public class CoreLoop : IDisposable
         SceneUpdate();
         Input.LateUpdate();
 
-        _renderModule.DrawFrame(_currentScene, delta);
+        _exampleRenderer.DrawFrame(_currentScene, delta);
 
         Time.EndFrame(_stopwatch);
     }
@@ -109,7 +110,7 @@ public class CoreLoop : IDisposable
         _currentScene.Dispose();
         _scriptingModule.Dispose();
         _inputBridge.Dispose();
-        _renderModule.Dispose();
+        _exampleRenderer.Dispose();
     }
 }
 

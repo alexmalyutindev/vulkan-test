@@ -2,20 +2,24 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Image = Silk.NET.Vulkan.Image;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {
     public class Swapchain
     {
+        public KhrSwapchain Handle => _khrSwapChain!;
+        public Format Format => _swapChainImageFormat;
+        public Extent2D Extent => _swapChainExtent;
+
         private KhrSwapchain? _khrSwapChain;
         private SwapchainKHR _swapChain;
-        public Format _swapChainImageFormat;
+        private Format _swapChainImageFormat;
         private Extent2D _swapChainExtent;
-
+        
         private Image[]? _swapChainImages;
         private ImageView[]? _swapChainImageViews;
-        
+
         private Image _depthImage;
         private ImageView _depthImageView;
         private DeviceMemory _depthImageMemory;
@@ -28,14 +32,14 @@ public unsafe partial class VulkanContext
         //   - Resolution
         // - Depth/Stencil
 
+        private readonly Vk _vk;
         private readonly VulkanContext _context;
-        private readonly RenderPass _renderPass;
         private readonly VulkanDevice _device;
 
-        public Swapchain(VulkanContext context, RenderPass renderPass)
+        public Swapchain(VulkanContext context)
         {
             _context = context;
-            _renderPass = renderPass;
+            _vk = context._vk;
             _device = context._device;
         }
 
@@ -98,8 +102,8 @@ public unsafe partial class VulkanContext
         {
             var swapChainSupport = _context.QuerySwapChainSupport(_device.PhysicalDevice);
 
-            var surfaceFormat = _context.ChooseSwapSurfaceFormat(swapChainSupport.Formats);
-            var presentMode = _context.ChoosePresentMode(swapChainSupport.PresentModes);
+            var surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.Formats);
+            var presentMode = ChoosePresentMode(swapChainSupport.PresentModes);
             var extent = _context.ChooseSwapExtent(swapChainSupport.Capabilities);
 
             var imageCount = swapChainSupport.Capabilities.MinImageCount + 1;
@@ -207,7 +211,8 @@ public unsafe partial class VulkanContext
             _depthImageView = CreateImageView(_depthImage, depthFormat, ImageAspectFlags.DepthBit);
         }
 
-        public void CreateFramebuffers()
+        // TODO: Move to RenderPass, looks like depth and image view is part of pass, not a swapchain
+        public void CreateFramebuffers(RenderPass renderPass)
         {
             _swapChainFramebuffers = new Framebuffer[_swapChainImageViews!.Length];
 
@@ -222,7 +227,7 @@ public unsafe partial class VulkanContext
                     FramebufferCreateInfo framebufferInfo = new()
                     {
                         SType = StructureType.FramebufferCreateInfo,
-                        RenderPass = _renderPass._renderPass,
+                        RenderPass = renderPass.Handle,
                         AttachmentCount = (uint) attachments.Length,
                         PAttachments = attachmentsPtr,
                         Width = _swapChainExtent.Width,
@@ -230,14 +235,14 @@ public unsafe partial class VulkanContext
                         Layers = 1,
                     };
 
-                    if (_context._vk.CreateFramebuffer(
+                    if (_vk.CreateFramebuffer(
                             _device.LogicalDevice,
                             framebufferInfo,
                             null,
                             out _swapChainFramebuffers[i]
                         ) != Result.Success)
                     {
-                        throw new Exception("failed to create framebuffer!");
+                        throw new Exception("Failed to create framebuffer!");
                     }
                 }
             }
@@ -268,7 +273,7 @@ public unsafe partial class VulkanContext
                 }
             };
 
-            if (_context._vk!.CreateImageView(
+            if (_vk.CreateImageView(
                     _device.LogicalDevice,
                     createInfo,
                     null,
@@ -281,6 +286,52 @@ public unsafe partial class VulkanContext
 
             return imageView;
         }
+    }
+
+    private ImageView CreateImageView(Image image, Format format, ImageAspectFlags aspectFlags)
+    {
+        ImageViewCreateInfo createInfo = new()
+        {
+            SType = StructureType.ImageViewCreateInfo,
+            Image = image,
+            ViewType = ImageViewType.Type2D,
+            Format = format,
+            Components =
+            {
+                R = ComponentSwizzle.Identity,
+                G = ComponentSwizzle.Identity,
+                B = ComponentSwizzle.Identity,
+                A = ComponentSwizzle.Identity,
+            },
+            SubresourceRange =
+            {
+                AspectMask = aspectFlags,
+                BaseMipLevel = 0,
+                LevelCount = 1,
+                BaseArrayLayer = 0,
+                LayerCount = 1,
+            }
+        };
+
+        if (_vk.CreateImageView(
+                _device.LogicalDevice,
+                createInfo,
+                null,
+                out var imageView
+            ) !=
+            Result.Success)
+        {
+            throw new Exception("failed to create image views!");
+        }
+
+        return imageView;
+    }
+
+    private struct SwapChainSupportDetails
+    {
+        public SurfaceCapabilitiesKHR Capabilities;
+        public SurfaceFormatKHR[] Formats;
+        public PresentModeKHR[] PresentModes;
     }
 
     private SwapChainSupportDetails QuerySwapChainSupport(PhysicalDevice physicalDevice)
@@ -329,14 +380,7 @@ public unsafe partial class VulkanContext
         return details;
     }
 
-    private struct SwapChainSupportDetails
-    {
-        public SurfaceCapabilitiesKHR Capabilities;
-        public SurfaceFormatKHR[] Formats;
-        public PresentModeKHR[] PresentModes;
-    }
-
-    private SurfaceFormatKHR ChooseSwapSurfaceFormat(IReadOnlyList<SurfaceFormatKHR> availableFormats)
+    private static SurfaceFormatKHR ChooseSwapSurfaceFormat(IReadOnlyList<SurfaceFormatKHR> availableFormats)
     {
         foreach (var availableFormat in availableFormats)
         {
@@ -350,7 +394,7 @@ public unsafe partial class VulkanContext
         return availableFormats[0];
     }
 
-    private PresentModeKHR ChoosePresentMode(IReadOnlyList<PresentModeKHR> availablePresentModes)
+    private static PresentModeKHR ChoosePresentMode(IReadOnlyList<PresentModeKHR> availablePresentModes)
     {
         foreach (var availablePresentMode in availablePresentModes)
         {

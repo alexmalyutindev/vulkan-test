@@ -1,7 +1,7 @@
 using Silk.NET.Vulkan;
 using Image = Silk.NET.Vulkan.Image;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {

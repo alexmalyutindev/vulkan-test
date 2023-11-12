@@ -1,10 +1,6 @@
-﻿using MtgWeb.Core;
-using Math = System.Math;
-
-namespace EngineCore;
-
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using MtgWeb.Core;
 using Silk.NET.Core;
 using Silk.NET.Core.Native;
 using Silk.NET.Maths;
@@ -12,6 +8,10 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Silk.NET.Windowing;
+using Math = System.Math;
+
+namespace EngineCore.Rendering.Core;
+
 using Semaphore = Silk.NET.Vulkan.Semaphore;
 using Buffer = Silk.NET.Vulkan.Buffer;
 using Image = Silk.NET.Vulkan.Image;
@@ -42,7 +42,7 @@ struct UniformBufferObject
 }
 
 // TODO: Convert to lib usage
-public unsafe class RenderModule : IDisposable
+public unsafe class ExampleRenderer : IDisposable
 {
     const string ModelPath = @"Assets/viking_room.obj";
     const string TexturePath = @"Assets/viking_room.png";
@@ -119,7 +119,7 @@ public unsafe class RenderModule : IDisposable
 
     private Mesh _mesh;
 
-    public RenderModule(IWindow window)
+    public ExampleRenderer(IWindow window)
     {
         _window = window;
         _window.Resize += FramebufferResizeCallback;

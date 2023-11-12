@@ -1,6 +1,6 @@
 ﻿using Engine;
 using EngineCore;
-using RenderCore.RenderModule;
+using EngineCore.Rendering.Core;
 
 
 var windowModule = new WindowModule();

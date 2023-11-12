@@ -5,7 +5,7 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Silk.NET.Windowing;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {
@@ -19,10 +19,19 @@ public unsafe partial class VulkanContext
         _device = new VulkanDevice(this);
         PickPhysicalDevice();
         CreateLogicalDevice();
+        
+        _swapchain = new Swapchain(this);
+        _swapchain.CreateSwapChain();
+        {
+            _swapchain.CreateImageViews();
+            _swapchain.CreateDepthResources();
+        }
 
-        // TODO: Move 
+        // TODO: Make configurable
         _renderPass = new RenderPass(this);
-        _renderPass.Initialize();
+        _renderPass.CreateRenderPass(_swapchain.Format);
+        
+        _swapchain.CreateFramebuffers(_renderPass);
     }
 
     private void CreateInstance()

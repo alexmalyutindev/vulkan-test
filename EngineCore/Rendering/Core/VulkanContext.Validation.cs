@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Silk.NET.Vulkan;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {

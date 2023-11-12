@@ -4,7 +4,7 @@ using Silk.NET.Core.Native;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {

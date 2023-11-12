@@ -5,7 +5,7 @@ namespace MtgWeb.Core;
 public abstract class Component : IDisposable
 {
     [JsonIgnore]
-    public Entity Entity;
+    public Entity? Entity;
 
     public static T Create<T>() where T : Component, new()
     {

@@ -4,7 +4,7 @@ using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
 using Silk.NET.Windowing;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public unsafe partial class VulkanContext
 {
@@ -23,6 +23,7 @@ public unsafe partial class VulkanContext
     // Device
     private VulkanDevice _device;
     
+    private Swapchain _swapchain;
     // TODO: Group by render pass, for now just embed it
     private RenderPass _renderPass;
 
@@ -31,6 +32,7 @@ public unsafe partial class VulkanContext
     public void Destroy()
     {
         _renderPass.Destroy();
+        _swapchain.Destroy(_vk);
     }
 
     private string[] GetRequiredExtensions(IView window)

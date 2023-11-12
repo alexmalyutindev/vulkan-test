@@ -1,6 +1,6 @@
 using Silk.NET.Vulkan;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public partial class VulkanContext
 {

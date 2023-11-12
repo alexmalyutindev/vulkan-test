@@ -7,9 +7,9 @@ namespace EngineCore;
 
 public struct Attributes
 {
-    public Vector3D<float> Pos;
-    public Vector3D<float> Color;
-    public Vector2D<float> TextCoord;
+    public Vector3D<float> PositionOS;
+    public Vector4D<float> Color;
+    public Vector4D<float> Texcoord0;
 
     public static VertexInputBindingDescription GetBindingDescription()
     {
@@ -23,6 +23,10 @@ public struct Attributes
         return bindingDescription;
     }
 
+    private const Format Float2 = Format.R32G32Sfloat;
+    private const Format Float3 = Format.R32G32B32Sfloat;
+    private const Format Float4 = Format.R32G32B32A32Sfloat;
+
     public static VertexInputAttributeDescription[] GetAttributeDescriptions()
     {
         var attributeDescriptions = new[]
@@ -31,22 +35,22 @@ public struct Attributes
             {
                 Binding = 0,
                 Location = 0,
-                Format = Format.R32G32B32Sfloat,
-                Offset = (uint) Marshal.OffsetOf<Attributes>(nameof(Pos)),
+                Format = Float3,
+                Offset = (uint) Marshal.OffsetOf<Attributes>(nameof(PositionOS)),
             },
             new VertexInputAttributeDescription()
             {
                 Binding = 0,
                 Location = 1,
-                Format = Format.R32G32B32Sfloat,
+                Format = Float4,
                 Offset = (uint) Marshal.OffsetOf<Attributes>(nameof(Color)),
             },
             new VertexInputAttributeDescription()
             {
                 Binding = 0,
                 Location = 2,
-                Format = Format.R32G32Sfloat,
-                Offset = (uint) Marshal.OffsetOf<Attributes>(nameof(TextCoord)),
+                Format = Float4,
+                Offset = (uint) Marshal.OffsetOf<Attributes>(nameof(Texcoord0)),
             }
         };
 

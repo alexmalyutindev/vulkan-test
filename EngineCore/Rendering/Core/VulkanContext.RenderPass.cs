@@ -1,44 +1,27 @@
 using Silk.NET.Vulkan;
 
-namespace RenderCore.RenderModule;
+namespace EngineCore.Rendering.Core;
 
 public partial class VulkanContext
 {
-    // This is an entry point to render loop
-    // It contain Swapchain that would be blited on the screen
     public class RenderPass
     {
+        public Silk.NET.Vulkan.RenderPass Handle => _renderPass;
+
         private readonly VulkanContext _context;
-        public Silk.NET.Vulkan.RenderPass _renderPass;
-        private Swapchain _swapchain;
+        private Silk.NET.Vulkan.RenderPass _renderPass;
 
         public RenderPass(VulkanContext context)
         {
             _context = context;
             // TODO: Make it configurable
-            _swapchain = new Swapchain(_context, this);
         }
 
-        public void Initialize()
-        {
-            // TODO: Unravel this dependency, maybe move on top level.
-            _swapchain.CreateSwapChain();
-            _swapchain.CreateImageViews();
-            CreateRenderPass();
-            
-            // TODO: CreateDescriptorSetLayout();
-            // TODO: CreateGraphicsPipeline();
-            // TODO: CreateCommandPool();
-            _swapchain.CreateDepthResources();
-
-            _swapchain.CreateFramebuffers();
-        }
-
-        private unsafe void CreateRenderPass()
+        public unsafe void CreateRenderPass(Format colorFormat)
         {
             AttachmentDescription colorAttachment = new()
             {
-                Format = _swapchain._swapChainImageFormat,
+                Format = colorFormat,
                 Samples = SampleCountFlags.Count1Bit,
                 LoadOp = AttachmentLoadOp.Clear,
                 StoreOp = AttachmentStoreOp.Store,
@@ -106,7 +89,7 @@ public partial class VulkanContext
                     PDependencies = &dependency,
                 };
 
-                if (_context._vk!.CreateRenderPass(
+                if (_context._vk.CreateRenderPass(
                         _context._device.LogicalDevice,
                         renderPassInfo,
                         null,
@@ -114,12 +97,10 @@ public partial class VulkanContext
                     ) !=
                     Result.Success)
                 {
-                    throw new Exception("failed to create render pass!");
+                    throw new Exception("Failed to create render pass!");
                 }
             }
         }
-        
-        
 
         public void BeginPass() { }
 
@@ -127,7 +108,7 @@ public partial class VulkanContext
 
         public void Destroy()
         {
-            _swapchain.Destroy(_context._vk);
+            // TODO: Destroy render pass.
         }
     }
 }
