@@ -26,8 +26,8 @@ public unsafe partial class VulkanContext
     {
         if (!_enableValidationLayers) return;
 
-        //TryGetInstanceExtension equivilant to method CreateDebugUtilsMessengerEXT from original tutorial.
-        if (!_vk!.TryGetInstanceExtension(_instance, out _debugUtils)) return;
+        // TryGetInstanceExtension equivalent to method CreateDebugUtilsMessengerEXT from original tutorial.
+        if (!_vk.TryGetInstanceExtension(_instance, out _debugUtils)) return;
 
         DebugUtilsMessengerCreateInfoEXT createInfo = new();
         PopulateDebugMessengerCreateInfo(ref createInfo);
@@ -56,11 +56,11 @@ public unsafe partial class VulkanContext
     private bool CheckValidationLayerSupport()
     {
         uint layerCount = 0;
-        _vk!.EnumerateInstanceLayerProperties(ref layerCount, null);
+        _vk.EnumerateInstanceLayerProperties(ref layerCount, null);
         var availableLayers = new LayerProperties[layerCount];
         fixed (LayerProperties* availableLayersPtr = availableLayers)
         {
-            _vk!.EnumerateInstanceLayerProperties(ref layerCount, availableLayersPtr);
+            _vk.EnumerateInstanceLayerProperties(ref layerCount, availableLayersPtr);
         }
 
         var availableLayerNames = availableLayers.Select(layer => Marshal.PtrToStringAnsi((IntPtr) layer.LayerName))
